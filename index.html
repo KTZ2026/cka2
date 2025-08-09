@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CKA Exam Simulator</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+h1 { text-align: center; }
+button { padding: 10px 20px; margin: 5px; }
+#quiz-container { background: white; padding: 20px; border-radius: 10px; max-width: 800px; margin: auto; }
+.hidden { display: none; }
+pre { background: #eee; padding: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<h1>CKA Exam Simulator</h1>
+<div id="settings">
+  <label>Topic:
+    <select id="topic">
+      <option value="all">All Topics</option>
+      <option value="cluster">Cluster Architecture</option>
+      <option value="workloads">Workloads & Scheduling</option>
+      <option value="networking">Services & Networking</option>
+      <option value="storage">Storage</option>
+      <option value="troubleshooting">Troubleshooting</option>
+    </select>
+  </label>
+  <label>Difficulty:
+    <select id="difficulty">
+      <option value="all">All</option>
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </label>
+  <button id="start-btn">Start Exam</button>
+</div>
+
+<div id="quiz-container" class="hidden">
+  <div id="timer"></div>
+  <div id="question"></div>
+  <div id="answers"></div>
+  <button id="next-btn">Next</button>
+</div>
+
+<script>
+const questions = [
+  {
+    topic: "cluster",
+    difficulty: "easy",
+    type: "mcq",
+    question: "Which command initializes a Kubernetes control plane node?",
+    options: ["kubeadm init", "kubectl create cluster", "kubectl init", "kubeadm start"],
+    answer: ["kubeadm init"]
+  },
+  {
+    topic: "workloads",
+    difficulty: "medium",
+    type: "fill-command",
+    question: "Fill in the command to list all Pods in the kube-system namespace:",
+    answer: "kubectl get pods -n kube-system"
+  },
+  {
+    topic: "networking",
+    difficulty: "hard",
+    type: "yaml-fill",
+    question: "Fill in the missing YAML to expose a Deployment 'nginx' as a ClusterIP service on port 80.",
+    yaml: "apiVersion: v1\nkind: Service\nmetadata:\n  name: nginx-svc\nspec:\n  selector:\n    app: nginx\n  ports:\n  - protocol: TCP\n    port: 80\n    targetPort: 80"
+  }
+];
+
+let currentIndex = 0;
+let filteredQuestions = [];
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  const topic = document.getElementById('topic').value;
+  const difficulty = document.getElementById('difficulty').value;
+  filteredQuestions = questions.filter(q => 
+    (topic === "all" || q.topic === topic) &&
+    (difficulty === "all" || q.difficulty === difficulty)
+  );
+  currentIndex = 0;
+  document.getElementById('settings').classList.add('hidden');
+  document.getElementById('quiz-container').classList.remove('hidden');
+  showQuestion();
+});
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  currentIndex++;
+  if (currentIndex < filteredQuestions.length) {
+    showQuestion();
+  } else {
+    alert('Exam finished!');
+    document.getElementById('quiz-container').classList.add('hidden');
+    document.getElementById('settings').classList.remove('hidden');
+  }
+});
+
+function showQuestion() {
+  const q = filteredQuestions[currentIndex];
+  document.getElementById('question').innerHTML = `<h3>Q${currentIndex+1}: ${q.question}</h3>`;
+  const answersDiv = document.getElementById('answers');
+  answersDiv.innerHTML = '';
+  if (q.type === 'mcq') {
+    q.options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.textContent = opt;
+      btn.onclick = () => checkAnswer([opt], q.answer);
+      answersDiv.appendChild(btn);
+    });
+  } else if (q.type === 'fill-command' || q.type === 'yaml-fill') {
+    const input = document.createElement('textarea');
+    input.rows = 4;
+    input.cols = 50;
+    answersDiv.appendChild(input);
+    const submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Submit';
+    submitBtn.onclick = () => checkAnswer(input.value.trim(), q.answer);
+    answersDiv.appendChild(submitBtn);
+    if (q.type === 'yaml-fill') {
+      const hint = document.createElement('pre');
+      hint.textContent = '(Write complete YAML here)';
+      answersDiv.appendChild(hint);
+    }
+  }
+}
+
+function checkAnswer(given, correct) {
+  if (Array.isArray(correct)) {
+    if (JSON.stringify(given) === JSON.stringify(correct)) {
+      alert('Correct!');
+    } else {
+      alert('Wrong! Correct answer: ' + correct.join(', '));
+    }
+  } else {
+    if (given === correct) {
+      alert('Correct!');
+    } else {
+      alert('Wrong! Correct answer: ' + correct);
+    }
+  }
+}
+</script>
+
+</body>
+</html>
